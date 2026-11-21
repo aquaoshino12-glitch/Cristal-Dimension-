@@ -1,4 +1,5 @@
 
+
 name: Build ECHOES
 
 on:
@@ -17,21 +18,36 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
       - name: Extract project
         run: |
           unzip -o ECHOES_Fabric_1.21.1_GITHUB_READY.zip -d extracted
-          find extracted -name build.gradle -print
+
+      - name: Configure plugin repositories
+        run: |
+          cd extracted
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  maven { url = 'https://maven.fabricmc.net/' }
+                  gradlePluginPortal()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = 'ECHOES'
+          EOF
 
       - name: Build mod
         run: |
           cd extracted
-          PROJECT=$(find . -name build.gradle -printf '%h\n' | head -n 1)
-          cd "$PROJECT"
           gradle build
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: ECHOES-mod-jar
-          path: extracted/**/build/libs/*.jar
+          path: extracted/build/libs/*.jar
           
