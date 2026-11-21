@@ -32,7 +32,30 @@ jobs:
           unzip -o "$ZIP" -d extracted
           BUILD_DIR=$(find extracted -name build.gradle -o -name build.gradle.kts | head -n 1)
           cd "$(dirname "$BUILD_DIR")"
-          printf 'org.gradle.jvmargs=-Xmx2G\norg.gradle.parallel=true\n' > gradle.properties
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("build.gradle")
+          s = p.read_text()
+
+          s = re.sub(
+              r'modImplementation\s*["\']net\.fabricmc\.fabric-api:[^"\']+["\']',
+              'modImplementation "net.fabricmc.fabric-api:fabric-api:0.102.0+1.21.1"',
+              s
+          )
+
+          if "maven.fabricmc.net" not in s:
+              repo = 'repositories { maven { url "https://maven.fabricmc.net/" } }\\n'
+              s = repo + s
+
+          p.write_text(s)
+          Path("gradle.properties").write_text(
+              "org.gradle.jvmargs=-Xmx2G\\norg.gradle.parallel=true\\n"
+          )
+          PY
+
           gradle build
 
       - name: Upload JAR
