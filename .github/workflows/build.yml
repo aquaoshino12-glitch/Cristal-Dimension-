@@ -1,53 +1,50 @@
 
+package com.echoes.mod;
 
-name: Build ECHOES
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
 
-on:
-  workflow_dispatch:
-  push:
+public class EchoesMod implements ModInitializer {
+    public static final String MOD_ID = "echoes";
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+    public static final Item ECHO_CRYSTAL = Registry.register(
+        Registries.ITEM, id("echo_crystal"), new Item(new Item.Settings())
+    );
 
-    steps:
-      - uses: actions/checkout@v4
+    public static final Item RESONANCE_CORE = Registry.register(
+        Registries.ITEM, id("resonance_core"),
+        new ResonanceCoreItem(new Item.Settings().maxCount(1))
+    );
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
+    public static final Block ECHO_BLOCK = Registry.register(
+        Registries.BLOCK, id("echo_block"),
+        new Block(FabricBlockSettings.copyOf(Blocks.AMETHYST_BLOCK).strength(3.0f).luminance(7))
+    );
 
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10.2'
+    public static final Item ECHO_BLOCK_ITEM = Registry.register(
+        Registries.ITEM, id("echo_block"), new BlockItem(ECHO_BLOCK, new Item.Settings())
+    );
 
-      - name: Extract project
-        run: |
-          unzip -o ECHOES_Fabric_1.21.1_GITHUB_READY.zip -d extracted
+    public static final SoundEvent RESONANCE_SOUND = Registry.register(
+        Registries.SOUND_EVENT, id("resonance"), SoundEvent.of(id("resonance"))
+    );
 
-      - name: Configure plugin repositories
-        run: |
-          cd extracted
-          cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  maven { url = 'https://maven.fabricmc.net/' }
-                  gradlePluginPortal()
-                  mavenCentral()
-              }
-          }
-          rootProject.name = 'ECHOES'
-          EOF
+    public static Identifier id(String name) {
+        return Identifier.of(MOD_ID, name);
+    }
 
-      - name: Build mod
-        run: |
-          cd extracted
-          gradle build
+    @Override
+    public void onInitialize() {
+        System.out.println("[ECHOES] Les Échos chargés !");
+    }
+}
 
-      - name: Upload JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: ECHOES-mod-jar
-          path: extracted/build/libs/*.jar
-          
+
